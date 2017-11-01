@@ -68,7 +68,7 @@ int main()
                             settings);
     //sf::Vector2f mousePosition;
     CAT cat;
-    if (1 == cat.init("/home/cssource/AllLW/LWCPP/CPP/LW5SFML4/cat.png", sf::Vector2f{WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2}))
+    if (1 == cat.init("cat.png", sf::Vector2f{WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2}))
     {
         std::cout << "No file load" << std::endl;
         return 1;
