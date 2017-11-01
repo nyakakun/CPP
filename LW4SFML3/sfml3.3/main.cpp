@@ -3,95 +3,116 @@
 #include <cmath>
 #include <iostream>
 
-constexpr float WidthEye = 70;			 //ширина глаза
-constexpr float HeightEye = 50;			 //высота глаза
-constexpr float RadiusPupil = 15;		 //Радиус зрачок
-constexpr float DistBetEyeAndPupil = 10; //дистанция от края глаза до края зрачка
-constexpr float DistanceBetweenEye = 50; //дистанция между глазамиdsfsfsdfsdfgit status
-constexpr float Points = 900;			 //кол-во точек элипса
-constexpr unsigned WINDOW_WIDTH = 800;   //ширина окна
-constexpr unsigned WINDOW_HEIGHT = 600;  //высота окна
+float toGrees(float radians){ return float(double(radians) * 180.0 / M_PI); }
+sf::Vector2f relativePos(sf::Vector2f posRoot, sf::Vector2f absolPos){ return absolPos-posRoot; }
 
-struct Eye //элементы глаза
-{
-	sf::ConvexShape eyeApple;											   //"глазное яблоко"
-	sf::CircleShape eyePupil;											   //"зрачок"
-	sf::Vector2f position;												   //позиция глаза
-	void init(float RadiusPupil, sf::Vector2f position, sf::Vector2f size) //инициализация глаза
-	{
-		eyeApple.setPosition(position); //позиция "глазного яблока"
-		this->position = position;		//установка позиции глаза, чтобы знать вокруг чего вращаться
-		eyeApple.setPointCount(Points); //кол-во вершин глаза
+constexpr float HeightEye = 100;			 //╤И╨╕╤А╨╕╨╜╨░ ╨│╨╗╨░╨╖╨░
+constexpr float WidthEye = 70;			 //╨▓╤Л╤Б╨╛╤В╨░ ╨│╨╗╨░╨╖╨░
+constexpr float RadiusPupil = 15;		 //╨а╨░╨┤╨╕╤Г╤Б ╨╖╤А╨░╤З╨╛╨║
+constexpr float DistBetEyeAndPupil = 20; //╨┤╨╕╤Б╤В╨░╨╜╤Ж╨╕╤П ╨╛╤В ╨║╤А╨░╤П ╨│╨╗╨░╨╖╨░ ╨┤╨╛ ╤Ж╨╡╨╜╤В╤А╨░ ╨╖╤А╨░╤З╨║╨░
+constexpr float DistanceBetweenEye = 50; //╨┤╨╕╤Б╤В╨░╨╜╤Ж╨╕╤П ╨╝╨╡╨╢╨┤╤Г ╨│╨╗╨░╨╖╨░╨╝╨╕
+constexpr float Points = 100;			 //╨║╨╛╨╗-╨▓╨╛ ╤В╨╛╤З╨╡╨║ ╤Н╨╗╨╕╨┐╤Б╨░
+constexpr unsigned WINDOW_WIDTH = 800;   //╤И╨╕╤А╨╕╨╜╨░ ╨╛╨║╨╜╨░
+constexpr unsigned WINDOW_HEIGHT = 600;  //╨▓╤Л╤Б╨╛╤В╨░ ╨╛╨║╨╜╨░
+const sf::Color ColorApple = sf::Color(0xFF, 0x0, 0x0);  //╤Ж╨▓╨╡╤В ╤П╨▒╨╗╨╛╨║╨░ ╨│╨╗╨╛╨╖╨╜╨╛╨│╨╛
+const sf::Color ColorPupil = sf::Color(0x00, 0x0, 0x0);  //╨╖╤А╨░╤З╨║╨░ ╨│╨╗╨░╨╖╨╜╨╛╨│╨╛ ╤Ж╨▓╨╡╤В ╤Н╤В╨╛ ┬й╨Щ╨╛╨┤╨░
 
-		for (int pointNo = 0; pointNo < Points; ++pointNo)
-		{
-			float angle = float(2 * M_PI * pointNo) / float(Points);	 //угол точки для элипса
-			sf::Vector2f point = sf::Vector2f{							 //позиция точки
-											  size.y * std::sin(angle),  //позиция по y
-											  size.x * std::cos(angle)}; //позиция по x
-			eyeApple.setPoint(pointNo, point);							 //установка точки
-		}
-		eyePupil.setRadius(RadiusPupil);														  //задаем радиус зрачка
-		eyePupil.setPosition(sf::Vector2f({position.x - RadiusPupil, position.y - RadiusPupil})); //задаем позицию зрачка
-		eyeApple.setFillColor(sf::Color(0xFF, 0x0, 0x0));										  //цвет яблока
-		eyePupil.setFillColor(sf::Color(0x0, 0x0, 0x0));										  //цвет зрачка
-	};
+struct Eye{
+	sf::ConvexShape eyeApple; //"╨│╨╗╨░╨╖╨╜╨╛╨╡ ╤П╨▒╨╗╨╛╨║╨╛"
+	sf::CircleShape eyePupil; //"╨╖╤А╨░╤З╨╛╨║"
+	sf::Vector2f position;	//╨┐╨╛╨╖╨╕╤Ж╨╕╤П ╨│╨╗╨░╨╖╨░
 
-	void update(sf::Vector2f &mousePosition) //функция обновления позиции мыши
-	{
-		const sf::Vector2f delta = mousePosition - position; //позиция курсора относительно центра глаза
-		const float angle = atan2(delta.x, delta.y);		 //угол курсора относительно центра глаза
-
-		float Sin1 = (/*YOffset - */ HeightEye + (RadiusPupil + DistBetEyeAndPupil)) * std::sin(angle);
-		float Sin2 = (/*YOffset - */ HeightEye + (RadiusPupil + DistBetEyeAndPupil)) * std::sin(angle - M_PI);
-		float Cos1 = (/*XOffset - */ WidthEye + (RadiusPupil + DistBetEyeAndPupil)) * std::cos(angle);
-		float Cos2 = (/*XOffset - */ WidthEye + (RadiusPupil + DistBetEyeAndPupil)) * std::cos(angle - M_PI);
-
-		/*float YOffset = 0;
-		float YOffset = 0;*/
-		int flag = 1;
-		if ((delta.y <= std::max(Sin1, Sin2)) && (delta.y >= std::min(Sin1, Sin2)))
-		{
-			if ((delta.x <= std::max(Cos1, Cos2)) && (delta.x >= std::min(Cos1, Cos2)))
-			{
-				eyePupil.setPosition(mousePosition - sf::Vector2f({RadiusPupil, RadiusPupil}));
-				flag = 0;
-				std::cout << "перетаскваю мышью" << std::endl;
-			}
-		}
-		if (flag == 1)
-		{
-			const sf::Vector2f offsetPupil = {																					 //смещение зрачка относительно центра глаза
-											  (/*YOffset - */ HeightEye - (RadiusPupil + DistBetEyeAndPupil)) * std::sin(angle), //смещение по y
-											  (/*XOffset - */ WidthEye - (RadiusPupil + DistBetEyeAndPupil)) * std::cos(angle)}; //смещение по Х
-			eyePupil.setPosition((position - sf::Vector2f({RadiusPupil, RadiusPupil})) + offsetPupil);							 //позиция зрачка
-		}
-	};
-
-	void draw(sf::RenderWindow &window) //функция отрисовки глаза
-	{
-		window.draw(eyeApple); //
-		window.draw(eyePupil); //
-	}
+	void init(sf::Vector2f position,sf::Vector2f size);
+	void draw(sf::RenderWindow &window);
+	void update(sf::Vector2f &mousePosition);
+private:
+	float calcAngle(sf::Vector2f relativeMousePosition);
+	int mouseOnEye(sf::Vector2f relativeMousePosition, float angle);
 };
 
-void onMouseMove(const sf::Event::MouseMoveEvent &event, sf::Vector2f &mousePosition) //функция получения/сохранения координат мыши
+int Eye::mouseOnEye(sf::Vector2f relativeMousePosition, float angle)
+{
+	float x1 = (HeightEye-DistBetEyeAndPupil) * std::cos(angle);
+	float x2 = (HeightEye-DistBetEyeAndPupil) * std::cos(angle+M_PI);
+	float y1 = (HeightEye-DistBetEyeAndPupil) * std::sin(angle);
+	float y2 = (WidthEye-DistBetEyeAndPupil) * std::sin(angle+M_PI);
+
+	if ((std::max(x1, x2) >= relativeMousePosition.x) &&
+		(std::min(x1, x2) <= relativeMousePosition.x) &&
+		(std::max(y1, y2) >= relativeMousePosition.y) && 
+		(std::min(y1, y2) <= relativeMousePosition.y))
+	{return 1;}
+	else
+	{return 0;}
+}
+
+float Eye::calcAngle(sf::Vector2f relativeMousePosition)
+{
+	const sf::Vector2f modifiedDelta = sf::Vector2f({relativeMousePosition.x / (WidthEye-DistBetEyeAndPupil), relativeMousePosition.y / (HeightEye-DistBetEyeAndPupil)});
+	return std::atan2(modifiedDelta.y, modifiedDelta.x);
+};
+
+void Eye::update(sf::Vector2f &mousePosition)
+{
+	const sf::Vector2f delta = relativePos(this->position, mousePosition);
+	float angle = calcAngle(delta);
+	if (0 == this->mouseOnEye(delta, angle))
+	{
+		sf::Vector2f pepe = sf::Vector2f{
+			(WidthEye-DistBetEyeAndPupil) * std::cos(angle),
+			(HeightEye-DistBetEyeAndPupil) * std::sin(angle)
+		};
+		this->eyePupil.setPosition(this->position + pepe);
+	}
+	else
+	{
+		this->eyePupil.setPosition(mousePosition);
+	}
+}
+
+void Eye::draw(sf::RenderWindow &window)
+{
+	window.draw(eyeApple);
+	window.draw(eyePupil);
+}
+
+void Eye::init(sf::Vector2f position,sf::Vector2f size)
+{
+	this->eyeApple.setPosition(position); //╨┐╨╛╨╖╨╕╤Ж╨╕╤П "╨│╨╗╨░╨╖╨╜╨╛╨│╨╛ ╤П╨▒╨╗╨╛╨║╨░"
+	this->position = position;		//╤Г╤Б╤В╨░╨╜╨╛╨▓╨║╨░ ╨┐╨╛╨╖╨╕╤Ж╨╕╨╕ ╨│╨╗╨░╨╖╨░, ╤З╤В╨╛╨▒╤Л ╨╖╨╜╨░╤В╤М ╨▓╨╛╨║╤А╤Г╨│ ╤З╨╡╨│╨╛ ╨▓╤А╨░╤Й╨░╤В╤М╤Б╤П
+	this->eyeApple.setPointCount(Points); //╨║╨╛╨╗-╨▓╨╛ ╨▓╨╡╤А╤И╨╕╨╜ ╨│╨╗╨░╨╖╨░
+	for (int pointNo = 0; pointNo < Points; ++pointNo)
+	{
+		float angle = float(2 * M_PI * pointNo) / float(Points);	 //╤Г╨│╨╛╨╗ ╤В╨╛╤З╨║╨╕ ╨┤╨╗╤П ╤Н╨╗╨╕╨┐╤Б╨░
+		sf::Vector2f point = sf::Vector2f{							 //╨┐╨╛╨╖╨╕╤Ж╨╕╤П ╤В╨╛╤З╨║╨╕
+			size.x * std::cos(angle),  //╨┐╨╛╨╖╨╕╤Ж╨╕╤П ╨┐╨╛ x
+			size.y * std::sin(angle)}; //╨┐╨╛╨╖╨╕╤Ж╨╕╤П ╨┐╨╛ y
+		this->eyeApple.setPoint(pointNo, point);//╤Г╤Б╤В╨░╨╜╨╛╨▓╨║╨░ ╤В╨╛╤З╨║╨╕
+	}
+	this->eyePupil.setRadius(RadiusPupil);
+	this->eyePupil.setOrigin(RadiusPupil, RadiusPupil);									  
+	this->eyePupil.setPosition(position);
+	this->eyeApple.setFillColor(ColorApple);
+	this->eyePupil.setFillColor(ColorPupil);
+}
+
+void onMouseMove(const sf::Event::MouseMoveEvent &event, sf::Vector2f &mousePosition) //╤Д╤Г╨╜╨║╤Ж╨╕╤П ╨┐╨╛╨╗╤Г╤З╨╡╨╜╨╕╤П/╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╨╕╤П ╨║╨╛╨╛╤А╨┤╨╕╨╜╨░╤В ╨╝╤Л╤И╨╕
 {
 	mousePosition = {float(event.x), float(event.y)}; //
 }
 
-void pollEvents(sf::RenderWindow &window, sf::Vector2f &mousePosition) //основной цикл программы
+void pollEvents(sf::RenderWindow &window, sf::Vector2f &mousePosition) //╨╛╤Б╨╜╨╛╨▓╨╜╨╛╨╣ ╤Ж╨╕╨║╨╗ ╨┐╤А╨╛╨│╤А╨░╨╝╨╝╤Л
 {
 	sf::Event event;
-	while (window.pollEvent(event)) //
+	while (window.pollEvent(event))
 	{
 		switch (event.type)
 		{
 		case sf::Event::Closed:
 			window.close();
 			break;
-		case sf::Event::MouseMoved:						 //если пользователь двинул мышь
-			onMouseMove(event.mouseMove, mousePosition); //сохраняем координаты
+		case sf::Event::MouseMoved:						 //╨╡╤Б╨╗╨╕ ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤М ╨┤╨▓╨╕╨╜╤Г╨╗ ╨╝╤Л╤И╤М
+			onMouseMove(event.mouseMove, mousePosition); //╤Б╨╛╤Е╤А╨░╨╜╤П╨╡╨╝ ╨║╨╛╨╛╤А╨┤╨╕╨╜╨░╤В╤Л
 			break;
 		default:
 			break;
@@ -99,7 +120,7 @@ void pollEvents(sf::RenderWindow &window, sf::Vector2f &mousePosition) //основно
 	}
 }
 
-int main() //
+int main()
 {
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
@@ -109,25 +130,19 @@ int main() //
 							settings);
 	sf::Vector2f mousePosition;
 
-	Eye leftEye;  //левый глаз
-	Eye RightEye; //правый глаз
-
-	float XLeft = (WINDOW_WIDTH / 2) - WidthEye - (DistanceBetweenEye / 2);  //Х позиция левого глаза
-	float XRight = (WINDOW_WIDTH / 2) + WidthEye + (DistanceBetweenEye / 2); //Х позиция правого глаза
-
-	float YLeft = (WINDOW_HEIGHT / 2) - HeightEye;  //У позиция левого глаза
-	float YRight = (WINDOW_HEIGHT / 2) - HeightEye; //У позиция правого глаза
-
-	leftEye.init(RadiusPupil, sf::Vector2f({XLeft, YLeft}), sf::Vector2f({WidthEye, HeightEye}));	//инициализация левого глаза
-	RightEye.init(RadiusPupil, sf::Vector2f({XRight, YRight}), sf::Vector2f({WidthEye, HeightEye})); //инициализация правго глаза
-	while (window.isOpen())																			 //
+	Eye eyeLeft;
+	Eye eyeRight;
+	eyeLeft.init(sf::Vector2f({WINDOW_WIDTH/2 - (WidthEye+(DistanceBetweenEye/2)), WINDOW_HEIGHT/2}),sf::Vector2f({WidthEye, HeightEye}));
+	eyeRight.init(sf::Vector2f({WINDOW_WIDTH/2 + (WidthEye+(DistanceBetweenEye/2)), WINDOW_HEIGHT/2}),sf::Vector2f({WidthEye, HeightEye}));
+	
+	while (window.isOpen())
 	{
 		pollEvents(window, mousePosition);
-		leftEye.update(mousePosition);  //обновляем левый глаз
-		RightEye.update(mousePosition); //обновляем правый
+		eyeLeft.update(mousePosition);
+		eyeRight.update(mousePosition);
 		window.clear();
-		leftEye.draw(window);  //отрисока левого
-		RightEye.draw(window); //отрисовка правого глаза
+		eyeLeft.draw(window);
+		eyeRight.draw(window);
 		window.display();
 	}
 }
